@@ -1,0 +1,13 @@
+services:
+  revolut-business-mcp:
+    build: .
+    image: revolut-business-mcp
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+    # Put your REVOLUT_* credentials and /mcp auth (MCP_AUTH_TOKEN or OAUTH_*) in a
+    # local .env file (see .env.example). Never commit real secrets.
+    env_file:
+      - .env
+    restart: unless-stopped
