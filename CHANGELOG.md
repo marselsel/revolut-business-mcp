@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — Unreleased
+## [0.1.0] — 2026-06-03
 
 Initial release: an open-source, self-hostable MCP server for the Revolut Business API.
 
@@ -13,7 +13,7 @@ Initial release: an open-source, self-hostable MCP server for the Revolut Busine
   and mints ~40-minute access tokens from a refresh token, refreshing automatically (with
   concurrency-deduped refresh and an optional file-based refresh-token store for rotated tokens).
 - **`npm run authorize`** bootstrap CLI to obtain the initial refresh token.
-- **~35 tools across three tiers**: read (accounts, transactions, counterparties, payment drafts,
+- **35 tools across three tiers**: read (accounts, transactions, counterparties, payment drafts,
   FX quotes, webhooks, cards, team, expenses); drafts/safe-writes (payment drafts, counterparties,
   webhooks, cards, team invites); and payments/money-movement (pay, transfer, exchange, deletes) —
   **off by default**, each confirm-gated, with a server-generated `request_id` for idempotency.
@@ -32,7 +32,7 @@ Initial release: an open-source, self-hostable MCP server for the Revolut Busine
   `/counterparty` resource). Confirmed the refresh token does not rotate (no token store needed).
 
 ### Known limitations
-- **cancel-transaction** (scheduled transactions only) and the **cards** / **exchange-reasons**
+- **cancel-transaction** (scheduled transactions only) and the **cards** / **expenses** / **exchange-reasons**
   endpoints aren't available in the sandbox — implemented per Revolut's docs; verify on production.
 - Production needs a paid **Grow** plan and a static egress IP (Revolut's production IP allow-list).
 - No UI views yet; plain tools render in all MCP clients.

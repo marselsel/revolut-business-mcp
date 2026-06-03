@@ -106,6 +106,21 @@ function parsePort(raw: string | undefined): number {
   return n;
 }
 
+/**
+ * Require HTTPS for configured URLs (OAuth issuer/JWKS/userinfo/resource, API bases), allowing
+ * plain http only for loopback so local mocks/testing still work. HTTPS matters most for the
+ * JWKS fetch — over http a network attacker could serve forged signing keys and bypass auth.
+ */
+function isAllowedUrlProtocol(url: URL): boolean {
+  if (url.protocol === "https:") return true;
+  const loopback =
+    url.hostname === "localhost" ||
+    url.hostname === "127.0.0.1" ||
+    url.hostname === "[::1]" ||
+    url.hostname === "::1";
+  return url.protocol === "http:" && loopback;
+}
+
 function normalizeUrl(raw: string | undefined, fallback: string, varName: string): string {
   const value = raw?.trim() || fallback;
   let url: URL;
@@ -114,8 +129,8 @@ function normalizeUrl(raw: string | undefined, fallback: string, varName: string
   } catch {
     throw new ConfigError(`Invalid ${varName} "${value}".`);
   }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new ConfigError(`${varName} must be http(s): "${value}".`);
+  if (!isAllowedUrlProtocol(url)) {
+    throw new ConfigError(`${varName} must be https:// (http:// is allowed only for localhost): "${value}".`);
   }
   // Strip a trailing slash so callers can join with `/accounts` etc.
   return url.toString().replace(/\/+$/, "");
@@ -134,8 +149,8 @@ function validateIssuerUrl(raw: string): string {
   } catch {
     throw new ConfigError(`Invalid OAUTH_ISSUER "${value}".`);
   }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new ConfigError(`OAUTH_ISSUER must be http(s): "${value}".`);
+  if (!isAllowedUrlProtocol(url)) {
+    throw new ConfigError(`OAUTH_ISSUER must be https:// (http:// is allowed only for localhost): "${value}".`);
   }
   return value;
 }
@@ -253,7 +268,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const tokenUrl = normalizeUrl(env.REVOLUT_TOKEN_URL, `${base}/auth/token`, "REVOLUT_TOKEN_URL");
   const webhooksBaseUrl = normalizeUrl(
     env.REVOLUT_WEBHOOKS_BASE_URL,
-    base.replace("/api/1.0", "/api/2.0"),
+    apiBaseUrl.replace("/api/1.0", "/api/2.0"),
     "REVOLUT_WEBHOOKS_BASE_URL",
   );
   const tokenStorePath = env.REVOLUT_TOKEN_STORE_PATH?.trim() || undefined;

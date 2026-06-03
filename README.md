@@ -5,6 +5,9 @@
 [![MCP](https://img.shields.io/badge/MCP-server-blue)](https://modelcontextprotocol.io)
 [![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen)](package.json)
 
+**Connect an AI agent to your Revolut Business banking — safely.** Read accounts, transactions and
+counterparties out of the box; money movement is opt-in and confirm-gated. Runs free on Revolut's sandbox.
+
 An open-source, self-hostable **[MCP](https://modelcontextprotocol.io) server** for the
 [Revolut Business](https://developer.revolut.com/docs/business/business-api) banking API. Run your
 own instance, connect it to Claude, and let an agent read your accounts, transactions and
@@ -30,7 +33,7 @@ never stores anyone else's. It runs as a remote HTTP server on any container hos
 
 ## Capabilities
 
-~35 tools across three tiers you enable via environment variables:
+35 tools across three tiers you enable via environment variables:
 
 | Tier | Default | What it covers |
 |------|---------|----------------|
@@ -40,7 +43,7 @@ never stores anyone else's. It runs as a remote HTTP server on any container hos
 
 Set `REVOLUT_READ_ONLY=true` to force read-only (overrides the flags above).
 
-> **Sandbox note:** the **cards** and **exchange-reasons** endpoints aren't available in Revolut's
+> **Sandbox note:** the **cards**, **expenses**, and **exchange-reasons** endpoints aren't available in Revolut's
 > sandbox (they return 404/500 there); they're intended for production accounts. Everything else
 > works fully in sandbox.
 
@@ -164,7 +167,7 @@ Validated end-to-end against Revolut's sandbox through the MCP protocol (auth + 
 - **Ops** — the refresh token does **not** rotate (no `REVOLUT_TOKEN_STORE_PATH` needed); sandbox consent host is `sandbox-business.revolut.com`.
 
 Implemented per Revolut's docs but not exercisable in sandbox (verify on a production account):
-**cancel-transaction** (scheduled transactions only) and the **cards** / **exchange-reasons**
+**cancel-transaction** (scheduled transactions only) and the **cards** / **expenses** / **exchange-reasons**
 endpoints (production-only — they 404/500 in sandbox).
 
 ## Development

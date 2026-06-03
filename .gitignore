@@ -3,6 +3,11 @@ dist/
 .env*
 # …but DO commit the documented, secret-free template:
 !.env.example
+# Private keys / certs — the quickstart generates these locally; never commit them:
+*.pem
+*.cer
+*.key
+*.p12
 .DS_store
 *.tsbuildinfo
 .skybridge/

@@ -120,9 +120,10 @@ export class RevolutClient {
 
       this.log(method, path, String(res.status));
 
-      // 401: the access token may have expired or been invalidated. Refresh once and
-      // retry (safe even for POST — a 401 means the request was rejected, nothing
-      // happened). If the refresh itself fails (refresh token expired), it propagates.
+      // 401 = the request was rejected at auth (not processed), so a single refresh+retry is
+      // safe even for a POST — distinct from the ambiguous transport/5xx failures we never
+      // replay. Money-moving POSTs also carry a server-generated request_id, so even a rare
+      // 401-after-processing is deduplicated by Revolut. A failed refresh propagates.
       if (res.status === 401 && !refreshedOn401) {
         refreshedOn401 = true;
         await this.tokenManager.refresh();
@@ -210,7 +211,7 @@ export class RevolutClient {
   private log(method: string, path: string, status: string): void {
     if (this.debug) {
       // Path only — never query (may contain filters), never headers/body.
-      console.error(`[revolut] ${method} ${path.split("?")[0]} -> ${status}`);
+      console.error(`[revolut-business-mcp] ${method} ${path.split("?")[0]} -> ${status}`);
     }
   }
 }

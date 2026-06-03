@@ -34,12 +34,12 @@ export function registerCardDraftTools(server: McpServer, client: RevolutClient)
   server.registerTool(
     {
       name: "create-card",
-      description: "Create a virtual card. Does not move money. VERIFY required fields for your account.",
+      description: "Create a virtual card. Does not move money. Required fields vary by account — see Revolut's Cards API docs.",
       inputSchema: cardInputShape,
       annotations: WRITE,
     },
     async (input) => {
-      const body = { ...input, request_id: input.request_id ?? randomUUID() };
+      const body = { ...input, request_id: input.request_id?.trim() || randomUUID() };
       return objectResult(await client.post<Record<string, unknown>>("/cards", body), "Virtual card created.");
     },
   );

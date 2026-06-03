@@ -3,11 +3,11 @@ import { z } from "zod";
 /**
  * Lenient zod shapes for Revolut write payloads. Revolut's request bodies vary by
  * counterparty/account type and region, so we validate the load-bearing fields and
- * forward the rest untouched (`.passthrough()`). Marked VERIFY where the exact
- * contract should be confirmed against the live API.
+ * forward the rest untouched (`.passthrough()`). The money-moving and counterparty
+ * shapes here are validated against the Revolut sandbox.
  */
 
-/** A payment receiver. VERIFY exact shape against Revolut `POST /pay`. */
+/** A payment receiver for `POST /pay` (validated against the sandbox). */
 export const receiverShape = z
   .object({
     counterparty_id: z.string().describe("Target counterparty id (from list-counterparties)."),
@@ -27,7 +27,7 @@ export const paymentInputShape = {
   reference: z.string().optional().describe("Statement reference shown to the recipient."),
 } as const;
 
-/** create-transfer (between your own accounts). VERIFY field names against the API. */
+/** create-transfer (between your own accounts) — validated against the sandbox. */
 export const transferInputShape = {
   source_account_id: z.string().describe("Account to debit (yours)."),
   target_account_id: z.string().describe("Account to credit (yours)."),
@@ -80,9 +80,9 @@ export const paymentDraftInputShape = {
 } as const;
 
 /**
- * create-counterparty (POST /counterparties) — lenient. Provide EITHER a Revolut
+ * create-counterparty (POST /counterparty, singular) — lenient. Provide EITHER a Revolut
  * counterparty (profile_type + name/revtag) OR an external bank account
- * (name/company_name + iban[/bic] or account_no+sort_code). VERIFY per region.
+ * (name/company_name + iban[/bic] or account_no+sort_code). Required fields vary by region.
  */
 export const counterpartyInputShape = {
   profile_type: z
@@ -109,7 +109,7 @@ export const webhookInputShape = {
     .describe('Event types, e.g. ["TransactionCreated","TransactionStateChanged"]. Defaults to both.'),
 } as const;
 
-/** create-card (virtual). VERIFY required fields against the Cards API. */
+/** create-card (virtual). Required fields vary by account — see Revolut's Cards API. */
 export const cardInputShape = {
   request_id: z.string().optional().describe("Idempotency key; generated server-side if omitted."),
   holder_id: z.string().optional().describe("Team member id the card is issued to."),

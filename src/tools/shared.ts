@@ -22,6 +22,11 @@ export function arrayResult<T>(items: T[] | undefined, noun: string) {
 
 /** Result for a single object: pass it through as structuredContent + a one-liner. */
 export function objectResult(obj: unknown, summary: string) {
-  const structured = obj && typeof obj === "object" ? (obj as Record<string, unknown>) : { value: obj };
+  // structuredContent must be a JSON object; wrap arrays (and primitives) so it stays valid.
+  const structured = Array.isArray(obj)
+    ? { items: obj, count: obj.length }
+    : obj && typeof obj === "object"
+      ? (obj as Record<string, unknown>)
+      : { value: obj };
   return { structuredContent: structured, content: text(summary) };
 }

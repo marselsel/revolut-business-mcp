@@ -40,6 +40,18 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ ...base(), REVOLUT_ENVIRONMENT: "test" } as NodeJS.ProcessEnv)).toThrow(ConfigError);
   });
 
+  it("requires HTTPS for config URLs (http allowed only for localhost)", () => {
+    expect(() =>
+      loadConfig({ ...base(), OAUTH_ISSUER: "http://auth.example.com", SERVER_URL: "https://x.example.com" } as NodeJS.ProcessEnv),
+    ).toThrow(/https/);
+    expect(() =>
+      loadConfig({ ...base(), REVOLUT_API_BASE_URL: "http://evil.example.com" } as NodeJS.ProcessEnv),
+    ).toThrow(/https/);
+    // http on localhost is allowed (local mocks / testing).
+    const c = loadConfig({ ...base(), REVOLUT_API_BASE_URL: "http://localhost:9000/api/1.0" } as NodeJS.ProcessEnv);
+    expect(c.revolut.apiBaseUrl).toBe("http://localhost:9000/api/1.0");
+  });
+
   it("requires client id / refresh token / issuer / private key", () => {
     expect(() => loadConfig(drop("REVOLUT_CLIENT_ID"))).toThrow(/REVOLUT_CLIENT_ID/);
     expect(() => loadConfig(drop("REVOLUT_REFRESH_TOKEN"))).toThrow(/REFRESH_TOKEN/);

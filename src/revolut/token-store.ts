@@ -34,7 +34,7 @@ export function createFileRefreshTokenStore(path: string): RefreshTokenStore {
         writeFileSync(path, token, { encoding: "utf8", mode: 0o600 });
       } catch (e) {
         console.error(
-          `[revolut-mcp] WARNING: could not persist refresh token to ${path}: ${
+          `[revolut-business-mcp] WARNING: could not persist refresh token to ${path}: ${
             e instanceof Error ? e.message : "unknown"
           }`,
         );

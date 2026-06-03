@@ -80,7 +80,7 @@ export class TokenManager {
 
   /** Return a valid access token, refreshing if the cached one is missing/near expiry. */
   async getAccessToken(): Promise<string> {
-    if (this.accessToken && this.now() < this.expiresAtMs - EXPIRY_SKEW_MS) {
+    if (this.accessToken && this.now() < this.expiresAtMs) {
       return this.accessToken;
     }
     return this.refresh();
@@ -143,7 +143,10 @@ export class TokenManager {
 
     this.accessToken = data.access_token;
     const ttlMs = (data.expires_in ?? DEFAULT_TTL_SEC) * 1000;
-    this.expiresAtMs = this.now() + ttlMs;
+    // Refresh ahead of expiry, but never reserve more than half of a short-lived token's life
+    // (so a token with a small `expires_in` still gets cached instead of minting on every call).
+    const skewMs = Math.min(EXPIRY_SKEW_MS, Math.floor(ttlMs / 2));
+    this.expiresAtMs = this.now() + ttlMs - skewMs;
 
     // Revolut MAY rotate the refresh token; persist a new one so restarts survive.
     if (data.refresh_token && data.refresh_token !== this.refreshToken) {
@@ -152,13 +155,13 @@ export class TokenManager {
         this.store.save(this.refreshToken);
       } else if (this.debug) {
         console.error(
-          "[revolut-mcp] note: Revolut rotated the refresh token; set REVOLUT_TOKEN_STORE_PATH to persist it across restarts.",
+          "[revolut-business-mcp] note: Revolut rotated the refresh token; set REVOLUT_TOKEN_STORE_PATH to persist it across restarts.",
         );
       }
     }
 
     if (this.debug) {
-      console.error(`[revolut-mcp] minted access token (ttl ~${Math.round(ttlMs / 1000)}s)`);
+      console.error(`[revolut-business-mcp] minted access token (ttl ~${Math.round(ttlMs / 1000)}s)`);
     }
     return this.accessToken;
   }

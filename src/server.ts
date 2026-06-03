@@ -95,7 +95,13 @@ if (config.auth.mode === "oauth") {
 
 registerTools(server, client, config);
 
-console.error(`[revolut-mcp] starting — ${describeCapabilities(config)}`);
+console.error(`[revolut-business-mcp] starting — ${describeCapabilities(config)}`);
+if (config.auth.mode === "oauth" && config.auth.allowedEmailDomains.length === 0) {
+  console.error(
+    "[revolut-business-mcp] WARNING: OAuth mode with no OAUTH_ALLOWED_EMAIL_DOMAINS — ANY user who " +
+      "can authenticate with your issuer can reach this server. Set OAUTH_ALLOWED_EMAIL_DOMAINS to restrict access.",
+  );
+}
 
 export default await server.run();
 
