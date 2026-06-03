@@ -1,6 +1,5 @@
 # Revolut Business MCP Server
 
-[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://revolut-business-mcp-845670131694.europe-west1.run.app)
 [![CI](https://github.com/marselsel/revolut-business-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/marselsel/revolut-business-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-server-blue)](https://modelcontextprotocol.io)
@@ -28,34 +27,6 @@ never stores anyone else's. It runs as a remote HTTP server on any container hos
 > ⚠️ **This brokers real bank accounts and can move real money.** Read [SECURITY.md](SECURITY.md).
 > Money movement is **off by default** (`REVOLUT_ENABLE_PAYMENTS=false`) and every money-moving
 > tool requires an explicit `confirm`. You are responsible for what you enable. No warranty (MIT).
-
-## Live demo
-
-A **read-only, sandbox-backed** instance is deployed and connectable:
-
-- 🌐 Landing page: **https://revolut-business-mcp-845670131694.europe-west1.run.app**
-- 🔌 MCP endpoint: `https://revolut-business-mcp-845670131694.europe-west1.run.app/mcp`
-- 🔑 Demo bearer token (read-only sandbox — safe to share): `revolut-mcp-demo-readonly-sandbox-token`
-
-Add it to **Claude Code** or **Claude Desktop** (clients that send a request header). The Claude
-**app / web "Add custom connector" UI does _not_ work with this demo** — that UI requires OAuth, and
-the demo uses a static token (you'd see *"Couldn't register with the sign-in service"*).
-
-```json
-{
-  "mcpServers": {
-    "revolut-demo": {
-      "type": "http",
-      "url": "https://revolut-business-mcp-845670131694.europe-west1.run.app/mcp",
-      "headers": { "Authorization": "Bearer revolut-mcp-demo-readonly-sandbox-token" }
-    }
-  }
-}
-```
-
-Then ask Claude *"list my Revolut accounts"* or *"show my recent transactions"* — it runs against
-Revolut's **sandbox** (fake data). The demo is read-only (`REVOLUT_READ_ONLY=true`), so it can't move
-money or create anything; without the token, `/mcp` returns `401`.
 
 ## Capabilities
 
