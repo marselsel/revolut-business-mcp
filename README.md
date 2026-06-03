@@ -37,7 +37,9 @@ A **read-only, sandbox-backed** instance is deployed and connectable:
 - 🔌 MCP endpoint: `https://revolut-business-mcp-845670131694.europe-west1.run.app/mcp`
 - 🔑 Demo bearer token (read-only sandbox — safe to share): `revolut-mcp-demo-readonly-sandbox-token`
 
-Add it to Claude Code / Desktop:
+Add it to **Claude Code** or **Claude Desktop** (clients that send a request header). The Claude
+**app / web "Add custom connector" UI does _not_ work with this demo** — that UI requires OAuth, and
+the demo uses a static token (you'd see *"Couldn't register with the sign-in service"*).
 
 ```json
 {
