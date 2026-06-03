@@ -22,7 +22,7 @@ export function registerTransactionTools(server: McpServer, client: RevolutClien
       annotations: RO,
     },
     async ({ account_id, counterparty_id, from, to, type, count }) => {
-      // VERIFY param names: Revolut uses `account` and `counterparty` query keys.
+      // Revolut filters by `account` and `counterparty` query keys (account filter verified live).
       const txns = await client.get<unknown[]>("/transactions", {
         account: account_id,
         counterparty: counterparty_id,

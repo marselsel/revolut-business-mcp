@@ -96,6 +96,7 @@ export const counterpartyInputShape = {
   bic: z.string().optional(),
   account_no: z.string().optional().describe("Local account number (e.g. UK)."),
   sort_code: z.string().optional().describe("UK sort code."),
+  bank_country: z.string().optional().describe('ISO country of the counterparty bank, e.g. "GB", "DE" (required for external bank accounts).'),
   currency: z.string().optional(),
 } as const;
 

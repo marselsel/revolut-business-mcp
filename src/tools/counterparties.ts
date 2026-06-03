@@ -24,7 +24,7 @@ export function registerCounterpartyReadTools(server: McpServer, client: Revolut
     },
     async ({ id }) =>
       objectResult(
-        await client.get<Record<string, unknown>>(`/counterparties/${encodeURIComponent(id)}`),
+        await client.get<Record<string, unknown>>(`/counterparty/${encodeURIComponent(id)}`),
         `Counterparty ${id} retrieved.`,
       ),
   );
@@ -41,7 +41,8 @@ export function registerCounterpartyDraftTools(server: McpServer, client: Revolu
       annotations: WRITE,
     },
     async (input) => {
-      const created = await client.post<{ id?: string }>("/counterparties", input);
+      // NB: create/get/delete use the SINGULAR /counterparty; only list is plural.
+      const created = await client.post<{ id?: string }>("/counterparty", input);
       return objectResult(created, `Created counterparty ${created.id ?? ""}.`);
     },
   );
@@ -61,7 +62,7 @@ export function registerCounterpartyPaymentTools(server: McpServer, client: Revo
       annotations: DESTRUCTIVE,
     },
     async ({ id }) => {
-      await client.del(`/counterparties/${encodeURIComponent(id)}`);
+      await client.del(`/counterparty/${encodeURIComponent(id)}`);
       return { structuredContent: { id, deleted: true }, content: text(`Deleted counterparty ${id}.`) };
     },
   );

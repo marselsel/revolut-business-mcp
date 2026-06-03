@@ -15,7 +15,7 @@ export function registerPaymentReadTools(server: McpServer, client: RevolutClien
       annotations: RO,
     },
     async ({ id }) =>
-      // VERIFY: payment ids from /pay are looked up via the transactions resource.
+      // A payment is a transaction; look it up via the transactions resource.
       objectResult(
         await client.get<Record<string, unknown>>(`/transactions/${encodeURIComponent(id)}`),
         `Payment ${id} retrieved.`,
@@ -102,7 +102,6 @@ export function registerPaymentMoneyTools(server: McpServer, client: RevolutClie
     },
     async ({ confirm: _confirm, ...input }) => {
       const request_id = randomUUID();
-      // VERIFY: own-account transfer endpoint (`/transfer`).
       const created = await client.post<Record<string, unknown>>("/transfer", { request_id, ...input });
       return objectResult({ request_id, ...created }, `Transfer submitted (request_id ${request_id}).`);
     },
@@ -112,7 +111,7 @@ export function registerPaymentMoneyTools(server: McpServer, client: RevolutClie
     {
       name: "cancel-payment",
       description:
-        "Cancel a still-pending payment/transaction by id. Completed payments cannot be cancelled. Requires confirm=true.",
+        "Cancel a SCHEDULED transaction (a future-dated payment) by id. Already-executed transactions can't be cancelled. Requires confirm=true.",
       inputSchema: {
         id: z.string(),
         confirm: z.literal(true).describe("Must be true to confirm cancellation."),
@@ -120,12 +119,13 @@ export function registerPaymentMoneyTools(server: McpServer, client: RevolutClie
       annotations: DESTRUCTIVE,
     },
     async ({ id }) => {
-      // VERIFY exact cancel endpoint path.
+      // Revolut's cancel-transaction endpoint (singular resource); applies to SCHEDULED
+      // transactions and is not exercisable in the sandbox — verify against production.
       const res = await client.post<Record<string, unknown>>(
-        `/transactions/${encodeURIComponent(id)}/cancel`,
+        `/transaction/${encodeURIComponent(id)}/cancel`,
         {},
       );
-      return objectResult(res ?? { id, cancelled: true }, `Requested cancellation of payment ${id}.`);
+      return objectResult(res ?? { id, cancelled: true }, `Requested cancellation of transaction ${id}.`);
     },
   );
 

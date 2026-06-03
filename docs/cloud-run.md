@@ -70,10 +70,47 @@ Enable money movement only when you're ready: add `REVOLUT_ENABLE_PAYMENTS=true`
 - **`--max-instances=1`** keeps the per-process ~1 req/s rate limiter accurate.
 - Health check path is **`/status`**, not `/healthz` — Google Front End intercepts `/healthz`.
 - Cloud Run injects `PORT`; the server honors it.
-- **Refresh-token rotation:** Cloud Run's filesystem is ephemeral. If Revolut rotates the refresh
-  token on refresh, a cold start would fall back to the (now-stale) secret value. Mitigate by
-  keeping one warm instance (`--min-instances=1`) or mounting a volume for
-  `REVOLUT_TOKEN_STORE_PATH`. Verify the rotation behaviour against the sandbox first.
+- **Refresh token:** Revolut does **not** rotate it on refresh (verified in sandbox), so the
+  env-provided `REVOLUT_REFRESH_TOKEN` keeps working across restarts — no volume or warm instance
+  needed. Re-run `npm run authorize` at most every ~90 days.
+
+## Production: connecting a real Revolut account
+
+Sandbox needs neither of these; production needs both:
+
+**1. A paid plan.** Revolut Business API access requires the **Grow** plan (or above).
+
+**2. A static outbound IP.** Production enforces an **IP allow-list** (configured on your API
+certificate), and Cloud Run's egress IP is dynamic by default. Route egress through Cloud NAT with
+a reserved static IP, then whitelist that IP in Revolut:
+
+```bash
+REGION=europe-west1
+# 1) Reserve a static IP — this is the address you whitelist in Revolut
+gcloud compute addresses create revolut-nat-ip --region=$REGION
+gcloud compute addresses describe revolut-nat-ip --region=$REGION --format='value(address)'
+
+# 2) VPC + subnet + Cloud Router + NAT pinned to that IP
+gcloud compute networks create revolut-vpc --subnet-mode=custom
+gcloud compute networks subnets create revolut-subnet \
+  --network=revolut-vpc --region=$REGION --range=10.8.0.0/28
+gcloud compute routers create revolut-router --network=revolut-vpc --region=$REGION
+gcloud compute routers nats create revolut-nat --router=revolut-router --region=$REGION \
+  --nat-custom-subnet-ip-ranges=revolut-subnet --nat-external-ip-pool=revolut-nat-ip
+
+# 3) Deploy with Direct VPC egress so ALL outbound traffic goes subnet → NAT → static IP
+gcloud run deploy revolut-business-mcp --source . --region=$REGION \
+  --allow-unauthenticated --max-instances=1 \
+  --network=revolut-vpc --subnet=revolut-subnet --vpc-egress=all-traffic \
+  --set-secrets REVOLUT_PRIVATE_KEY=revolut-private-key:latest,REVOLUT_REFRESH_TOKEN=revolut-refresh-token:latest \
+  --set-env-vars REVOLUT_ENVIRONMENT=production,REVOLUT_CLIENT_ID=...,REVOLUT_JWT_ISSUER=...,OAUTH_ISSUER=...,SERVER_URL=...,OAUTH_RESOURCE=...,OAUTH_VERIFY_AUDIENCE=true
+```
+
+Then: add the reserved IP under **Revolut Business → APIs → (your certificate) → Production IP
+whitelist**; create the production certificate/Client ID and run `npm run authorize` (production —
+add the `PAY` scope if you'll move money) for a production refresh token; keep
+`REVOLUT_ENABLE_PAYMENTS=false` until you intend to move real money; and set
+`OAUTH_VERIFY_AUDIENCE=true` once your OAuth provider advertises a Resource Indicator for the server.
 
 ## 3. (Optional) Custom domain
 

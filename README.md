@@ -1,5 +1,10 @@
 # Revolut Business MCP Server
 
+[![CI](https://github.com/marselsel/revolut-business-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/marselsel/revolut-business-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-server-blue)](https://modelcontextprotocol.io)
+[![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen)](package.json)
+
 An open-source, self-hostable **[MCP](https://modelcontextprotocol.io) server** for the
 [Revolut Business](https://developer.revolut.com/docs/business/business-api) banking API. Run your
 own instance, connect it to Claude, and let an agent read your accounts, transactions and
@@ -135,7 +140,8 @@ Production notes:
 Revolut **Grow plan** (or above) for API access, and a **static outbound IP** for Revolut's
 production IP allow-list (on Cloud Run, route egress through Cloud NAT).
 
-**Google Cloud Run:** a step-by-step recipe is in [docs/cloud-run.md](docs/cloud-run.md).
+**Google Cloud Run:** step-by-step recipes for both sandbox and production (including the
+static-IP / Cloud NAT setup for Revolut's allow-list) are in [docs/cloud-run.md](docs/cloud-run.md).
 
 ## How it works
 
@@ -150,14 +156,16 @@ production IP allow-list (on Cloud Run, route egress through Cloud NAT).
 ## Tested against the sandbox
 
 Validated end-to-end against Revolut's sandbox through the MCP protocol (auth + `tools/list` +
-`tools/call`): all **35 tools** register, account / transaction / counterparty **reads**, FX rate,
-webhooks and team data return live data, and **creating a payment draft** works. Confirmed: the
-refresh token does **not** rotate (no `REVOLUT_TOKEN_STORE_PATH` needed) and the sandbox consent
-host is `sandbox-business.revolut.com`.
+`tools/call`), with all **35 tools** registered. Confirmed working against the live sandbox API:
 
-Still marked `VERIFY` in code (not exercised here — money-moving or sandbox-unavailable): the
-`/pay`, `/transfer` and `/exchange` request shapes, the payment cancel path, counterparty-create
-fields per region, and the cards / exchange-reasons endpoints (not in sandbox).
+- **Reads** — accounts, bank details, transactions (incl. the `account` filter), counterparties, FX rate, webhooks (v2), team members.
+- **Money movement** — `POST /pay` (to external-account *and* revtag counterparties), own-account `/transfer`, and FX `/exchange` all execute; a server-generated `request_id` provides idempotency.
+- **Drafts & writes** — create a payment draft, plus full counterparty CRUD (Revolut's quirk: singular `/counterparty` for create/get/delete vs. plural `/counterparties` for list).
+- **Ops** — the refresh token does **not** rotate (no `REVOLUT_TOKEN_STORE_PATH` needed); sandbox consent host is `sandbox-business.revolut.com`.
+
+Implemented per Revolut's docs but not exercisable in sandbox (verify on a production account):
+**cancel-transaction** (scheduled transactions only) and the **cards** / **exchange-reasons**
+endpoints (production-only — they 404/500 in sandbox).
 
 ## Development
 
