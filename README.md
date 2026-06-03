@@ -7,7 +7,9 @@ counterparties — and (optionally) move money under explicit, gated control.
 
 Bring your own Revolut Business API credentials — the server is single-tenant per deployment and
 never stores anyone else's. It runs as a remote HTTP server on any container host, built with the
-[Skybridge](https://docs.skybridge.tech) framework.
+[Skybridge](https://docs.skybridge.tech) framework. It **defaults to Revolut's free
+[sandbox](https://developer.revolut.com/docs/guides/manage-accounts/get-started/prepare-sandbox-environment)**
+(fake money), so you can run and test the whole thing end-to-end without a paid plan.
 
 **Two authentication layers — don't confuse them:**
 - **Upstream (server → Revolut):** OAuth 2.0 **JWT client assertion**. You upload an API
@@ -32,6 +34,10 @@ never stores anyone else's. It runs as a remote HTTP server on any container hos
 | **Payments / money movement** (`REVOLUT_ENABLE_PAYMENTS`) | off | **Send payments**, transfer between own accounts, FX **exchange** (all confirm-gated, irreversible); destructive deletes (counterparty, draft, webhook, card) |
 
 Set `REVOLUT_READ_ONLY=true` to force read-only (overrides the flags above).
+
+> **Sandbox note:** the **cards** and **exchange-reasons** endpoints aren't available in Revolut's
+> sandbox (they return 404/500 there); they're intended for production accounts. Everything else
+> works fully in sandbox.
 
 ## Get your Revolut API credentials
 
@@ -73,7 +79,7 @@ Without Docker: `npm install && npm run build && npm start`.
 | `REVOLUT_PRIVATE_KEY` / `REVOLUT_PRIVATE_KEY_PATH` | — (**one required**) | PEM private key (contents or file path) used to sign the JWT |
 | `REVOLUT_REFRESH_TOKEN` | — (**required**) | From `npm run authorize` |
 | `REVOLUT_JWT_ISSUER` | — (**required**) | JWT `iss` = your redirect URI's domain (e.g. `example.com`) |
-| `REVOLUT_ENVIRONMENT` | `production` | `production` or `sandbox` |
+| `REVOLUT_ENVIRONMENT` | `sandbox` | `sandbox` (free, fake money) or `production` (needs a paid Revolut plan) |
 | `REVOLUT_TOKEN_STORE_PATH` | — | File to persist a rotated refresh token (hosts with a volume) |
 | `REVOLUT_READ_ONLY` | `false` | Register only read tools (hard override) |
 | `REVOLUT_ENABLE_DRAFTS` | `true` | Enable safe-write tools (payment drafts, counterparties, …) |
@@ -121,9 +127,13 @@ Production notes:
 - Set both auth layers (`REVOLUT_*` upstream + `OAUTH_*`/`MCP_AUTH_TOKEN` inbound) — fails closed otherwise.
 - **Run a single instance** (the ~1 req/s rate limiter is per-process).
 - Health check: `GET /status` (returns `200`).
-- **Refresh-token persistence:** if Revolut rotates the refresh token, set `REVOLUT_TOKEN_STORE_PATH`
-  to a persistent volume (or keep one warm instance) so restarts survive. Re-authorize at most
-  every ~90 days.
+- **Refresh token:** Revolut does **not** rotate it on refresh (verified in sandbox), so no
+  persistence is needed — just re-authorize at most every ~90 days. (`REVOLUT_TOKEN_STORE_PATH`
+  remains as a safety net if that ever changes.)
+
+**Going to production** (`REVOLUT_ENVIRONMENT=production`) needs two things sandbox doesn't: a paid
+Revolut **Grow plan** (or above) for API access, and a **static outbound IP** for Revolut's
+production IP allow-list (on Cloud Run, route egress through Cloud NAT).
 
 **Google Cloud Run:** a step-by-step recipe is in [docs/cloud-run.md](docs/cloud-run.md).
 
@@ -137,12 +147,17 @@ Production notes:
 - `src/auth.ts` / `src/oauth.ts` — inbound `/mcp` protection (static bearer / OAuth 2.1 + verified-email gate).
 - `src/tools/` — tools registered conditionally by tier.
 
-## Verify against the live API
+## Tested against the sandbox
 
-A few endpoint details are marked `VERIFY` in the code — confirm against the **sandbox** before
-relying on them in production: transaction filter param names; the own-account transfer endpoint;
-the payment-status / cancel paths; counterparty create fields per region; and whether Revolut
-rotates the refresh token (which determines whether you need `REVOLUT_TOKEN_STORE_PATH`).
+Validated end-to-end against Revolut's sandbox through the MCP protocol (auth + `tools/list` +
+`tools/call`): all **35 tools** register, account / transaction / counterparty **reads**, FX rate,
+webhooks and team data return live data, and **creating a payment draft** works. Confirmed: the
+refresh token does **not** rotate (no `REVOLUT_TOKEN_STORE_PATH` needed) and the sandbox consent
+host is `sandbox-business.revolut.com`.
+
+Still marked `VERIFY` in code (not exercised here — money-moving or sandbox-unavailable): the
+`/pay`, `/transfer` and `/exchange` request shapes, the payment cancel path, counterparty-create
+fields per region, and the cards / exchange-reasons endpoints (not in sandbox).
 
 ## Development
 

@@ -32,7 +32,7 @@ if (!clientId) fail("REVOLUT_CLIENT_ID is required.");
 const jwtIssuer = env.REVOLUT_JWT_ISSUER?.trim();
 if (!jwtIssuer) fail("REVOLUT_JWT_ISSUER is required (your redirect URI's domain, e.g. example.com).");
 
-const environment = env.REVOLUT_ENVIRONMENT?.trim().toLowerCase() || "production";
+const environment = env.REVOLUT_ENVIRONMENT?.trim().toLowerCase() || "sandbox";
 if (environment !== "production" && environment !== "sandbox") {
   fail('REVOLUT_ENVIRONMENT must be "production" or "sandbox".');
 }
@@ -64,9 +64,11 @@ try {
 const redirectUri = env.REVOLUT_REDIRECT_URI?.trim() || `https://${jwtIssuer}`;
 const scope = env.REVOLUT_SCOPE?.trim() || "READ,WRITE";
 
-// VERIFY: the sandbox consent host. Production is confirmed.
+// Consent host. Overridable via REVOLUT_CONSENT_HOST — the sandbox host can vary, so
+// use whatever domain you're logged into the sandbox Business app on if the default 404s.
 const consentHost =
-  environment === "sandbox" ? "https://sandbox-business.revolut.com" : "https://business.revolut.com";
+  env.REVOLUT_CONSENT_HOST?.trim() ||
+  (environment === "sandbox" ? "https://sandbox-business.revolut.com" : "https://business.revolut.com");
 const consentUrl =
   `${consentHost}/app-confirm?client_id=${encodeURIComponent(clientId)}` +
   `&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;

@@ -191,7 +191,9 @@ function resolveAuth(env: NodeJS.ProcessEnv): AuthConfig {
 }
 
 function parseEnvironment(raw: string | undefined): RevolutEnvironment {
-  const v = (raw?.trim() || "production").toLowerCase();
+  // Default to sandbox: it's free (no paid plan), safe (fake money), and lets anyone run
+  // the project out of the box. Set REVOLUT_ENVIRONMENT=production for a real account.
+  const v = (raw?.trim() || "sandbox").toLowerCase();
   if (v === "production" || v === "sandbox") return v;
   throw new ConfigError(`Invalid REVOLUT_ENVIRONMENT "${raw}" (expected "production" or "sandbox").`);
 }

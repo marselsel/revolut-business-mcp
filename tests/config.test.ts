@@ -18,22 +18,22 @@ const drop = (key: string) => {
 };
 
 describe("loadConfig", () => {
-  it("loads a valid config with production defaults", () => {
+  it("loads a valid config with sandbox defaults", () => {
     const c = loadConfig(base());
     expect(c.revolut.clientId).toBe("client-123");
-    expect(c.revolut.environment).toBe("production");
-    expect(c.revolut.apiBaseUrl).toBe("https://b2b.revolut.com/api/1.0");
-    expect(c.revolut.tokenUrl).toBe("https://b2b.revolut.com/api/1.0/auth/token");
-    expect(c.revolut.webhooksBaseUrl).toBe("https://b2b.revolut.com/api/2.0");
+    expect(c.revolut.environment).toBe("sandbox");
+    expect(c.revolut.apiBaseUrl).toBe("https://sandbox-b2b.revolut.com/api/1.0");
+    expect(c.revolut.tokenUrl).toBe("https://sandbox-b2b.revolut.com/api/1.0/auth/token");
+    expect(c.revolut.webhooksBaseUrl).toBe("https://sandbox-b2b.revolut.com/api/2.0");
     expect(c.port).toBe(8080);
     expect(c.capabilities).toEqual({ read: true, drafts: true, payments: false });
   });
 
-  it("switches hosts for the sandbox environment", () => {
-    const c = loadConfig({ ...base(), REVOLUT_ENVIRONMENT: "sandbox" } as NodeJS.ProcessEnv);
-    expect(c.revolut.apiBaseUrl).toBe("https://sandbox-b2b.revolut.com/api/1.0");
-    expect(c.revolut.tokenUrl).toBe("https://sandbox-b2b.revolut.com/api/1.0/auth/token");
-    expect(c.revolut.webhooksBaseUrl).toBe("https://sandbox-b2b.revolut.com/api/2.0");
+  it("switches to production hosts when REVOLUT_ENVIRONMENT=production", () => {
+    const c = loadConfig({ ...base(), REVOLUT_ENVIRONMENT: "production" } as NodeJS.ProcessEnv);
+    expect(c.revolut.apiBaseUrl).toBe("https://b2b.revolut.com/api/1.0");
+    expect(c.revolut.tokenUrl).toBe("https://b2b.revolut.com/api/1.0/auth/token");
+    expect(c.revolut.webhooksBaseUrl).toBe("https://b2b.revolut.com/api/2.0");
   });
 
   it("rejects an invalid environment", () => {
@@ -120,7 +120,7 @@ describe("loadConfig", () => {
     const s = describeCapabilities(loadConfig(base()));
     expect(s).toContain("read");
     expect(s).toContain("drafts");
-    expect(s).toContain("production");
+    expect(s).toContain("sandbox");
     expect(s).not.toContain(TOKEN);
     expect(s).not.toContain("oa_prod_refresh");
   });

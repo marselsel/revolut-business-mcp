@@ -21,10 +21,17 @@ Initial release: an open-source, self-hostable MCP server for the Revolut Busine
   token; fails closed if neither is configured.
 - Rate-limited (~1 req/s), retry-aware client that never replays non-idempotent POSTs and refreshes
   once on a 401.
+- Defaults to the free Revolut **sandbox** (set `REVOLUT_ENVIRONMENT=production` for a real account).
 - Docker image, GitHub Actions CI, and a Google Cloud Run deployment guide.
 
+### Validated
+- Tested end-to-end against the Revolut **sandbox** through the MCP protocol: auth, all 35 tools
+  list, account/transaction/counterparty reads, FX rate, webhooks, team, and creating a payment
+  draft. Confirmed the refresh token does not rotate (no token store needed).
+
 ### Known limitations
-- Several endpoint details are marked `VERIFY` in the code (transaction filter params, own-account
-  transfer path, payment cancel/status paths, counterparty create fields per region, and whether
-  Revolut rotates the refresh token) — confirm against the sandbox before production use.
+- The `cards` and `exchange-reasons` endpoints aren't available in Revolut's sandbox (404/500);
+  they're intended for production accounts.
+- Money-moving request shapes (`/pay`, `/transfer`, `/exchange`) and the cancel path are marked
+  `VERIFY` in code — exercise them on your own account before relying on them.
 - No UI views yet; plain tools render in all MCP clients.
